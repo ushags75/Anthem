@@ -44,7 +44,10 @@ public class EmpController {
 	public Employee updateEmployee(@RequestBody Employee emp) {
 		return service.updateEmployee(emp);
 	}
-	
+	@GetMapping("/name/{name}")
+	public List<Employee> getEmployeesWithSameName(@PathVariable String name){
+		return service.getEmployeesWithSameName(name);
+	}
 	@DeleteMapping("/delete/{id}")
 	public String deleteemployee(@PathVariable String id){
 		service.deleteEmp(id);

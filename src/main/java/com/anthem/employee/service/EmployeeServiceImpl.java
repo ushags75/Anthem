@@ -1,7 +1,9 @@
 package com.anthem.employee.service;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -18,53 +20,43 @@ public class EmployeeServiceImpl implements EmployeeService {
 
 	@Override
 	public String saveEmp(Employee emp) {
-		Employee savedEmp=null;
-		//Verify input is null or not
 		if(emp==null)
 			return "Please provide input";
-		else
-		{
-			if(!StringUtils.validateString(emp.getId()))
-				return "Employee ID cannot be null";
-			else if(!emp.getId().matches("[^a-zA-Z0-9]+$"))
-				return "Employee ID cannot contain special character";
-			
-			if(!validateString(emp.getName()))
-				return "Employee name cannot be null";
-		}
-		if(emp==null || emp.getId()==null || emp.getId().isEmpty()) {
+		if(!StringUtils.validateString(emp.getId()))
 			return "Employee ID cannot be null";
-		}
-		if(emp.getName()==null || emp.getName().isEmpty()) {
-			
-		}
-		if(emp.getDesignation()==null || emp.getDesignation().isEmpty()) {
+		if(!StringUtils.validateString(emp.getName()))
+			return "Employee name cannot be null";
+		if(!StringUtils.validateString(emp.getDesignation()))
 			return "Employee designation cannot be null";
-		}
-		if() {
-			
-		}
+		if(!emp.getId().matches("^[a-zA-Z0-9]+$"))
+			return "Employee ID cannot contain special character";
+
 		if(isEmployeeIdDuplicate(emp.getId())) {
 			return "Employee ID already exists";
 		}
-		if(emp!=null)
-		{
-			savedEmp=repo.save(emp);
-		}
-		 if(savedEmp!=null && savedEmp.getId()!=null)
+		Employee savedEmp=repo.save(emp);
+		if(savedEmp!=null && savedEmp.getId()!=null)
 			 return "Employee record Saved successfully";
-		 else
+		else
 			 return "Some error while saving Employee record";
 	}
 
 	public boolean isEmployeeIdDuplicate(String id) {
-		return repo.findById(id).isPresent();
+		//List<Employee> duplicateEmployees = repo.findAll().stream().filter(e->e.getId().equals(id) || e.getName().equals(name)).collect(Collectors.toList());
+		//return duplicateEmployees.size()>1;	
+	    return repo.findById(id).isPresent();
+	}
+	
+	public List<Employee> getEmployeesWithSameName(String name){
+		return repo.findByName(name);
 	}
 
 	@Override
 	public List<Employee> findAllEmp() {
-		// TODO Auto-generated method stub
-		return repo.findAll();
+	    List<Employee> employees=repo.findAll();
+	    
+	    employees.sort(Comparator.comparing(Employee::getId));
+		return employees;
 
 	}
 
