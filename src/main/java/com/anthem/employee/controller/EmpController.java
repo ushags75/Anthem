@@ -1,8 +1,9 @@
 package com.anthem.employee.controller;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,24 +36,36 @@ public class EmpController {
 	}
 
 	@GetMapping("/getById/{id}")
-	public Employee getEmployeebyId(@PathVariable String id) {
+	public ResponseEntity<Employee> getEmployeebyId(@PathVariable String id) {
 		
-		return service.findEmp(id); 
+		try {
+			return service.findEmp(id);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			return new ResponseEntity<>(null,HttpStatus.NOT_FOUND);
+		} 
+		
 	}
 	
 	@PutMapping("/update")
 	public Employee updateEmployee(@RequestBody Employee emp) {
 		return service.updateEmployee(emp);
 	}
-	@GetMapping("/name/{name}")
+	@GetMapping("/ascending")
+	public ResponseEntity<List<Employee>> findAllEmpAsc() throws Exception{
+		return service.findAllEmp(true);
+	}
+	@GetMapping("/descending")
+	public ResponseEntity<List<Employee>> findAllEmpDsc() throws Exception{
+		return service.findAllEmp(false);
+	}
+	@GetMapping("/getByname/{name}")
 	public List<Employee> getEmployeesWithSameName(@PathVariable String name){
 		return service.getEmployeesWithSameName(name);
 	}
 	@DeleteMapping("/delete/{id}")
 	public String deleteemployee(@PathVariable String id){
-		service.deleteEmp(id);
-	
-		return "Deleted Successfully";
+		return service.deleteEmp(id);
 	}
 
 }
