@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 import com.anthem.employee.model.Employee;
 import com.anthem.employee.service.EmployeeService;
-
 // Annotation
 @RestController
 
@@ -25,12 +25,12 @@ public class EmpController {
 	private EmployeeService service;
 
 	@PostMapping("/addEmployee")
-	public String saveEmployee(@RequestBody Employee emp){
+	public ResponseEntity<String> saveEmployee(@RequestBody Employee emp) throws Exception{
 		return service.saveEmp(emp);  
 	}
 
 	@GetMapping("/findAll")
-	public List<Employee> getEmployees() {
+	public ResponseEntity<List<Employee>> getEmployees() throws Exception {
 	
 		return service.findAllEmp(); 
 	}
@@ -41,14 +41,13 @@ public class EmpController {
 		try {
 			return service.findEmp(id);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			return new ResponseEntity<>(null,HttpStatus.NOT_FOUND);
 		} 
 		
 	}
 	
 	@PutMapping("/update")
-	public Employee updateEmployee(@RequestBody Employee emp) {
+	public ResponseEntity<Employee> updateEmployee(@RequestBody Employee emp) throws Exception {
 		return service.updateEmployee(emp);
 	}
 	@GetMapping("/ascending")
@@ -60,12 +59,17 @@ public class EmpController {
 		return service.findAllEmp(false);
 	}
 	@GetMapping("/getByname/{name}")
-	public List<Employee> getEmployeesWithSameName(@PathVariable String name){
+	public ResponseEntity<List<Employee>> getEmployeesWithSameName(@PathVariable String name) throws Exception{
 		return service.getEmployeesWithSameName(name);
 	}
 	@DeleteMapping("/delete/{id}")
-	public String deleteemployee(@PathVariable String id){
+	public ResponseEntity<String> deleteemployee(@PathVariable String id) throws Exception{
 		return service.deleteEmp(id);
+	}
+	@GetMapping("/employees/manager/{managerid}")
+	public ResponseEntity<List<Employee>> getEmployeesByManager(@PathVariable("managerid") String managerid) throws Exception{
+		
+		return service.getEmployeesByManagerId(managerid);
 	}
 
 }

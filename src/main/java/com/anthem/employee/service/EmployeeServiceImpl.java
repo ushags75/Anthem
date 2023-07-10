@@ -3,7 +3,6 @@ package com.anthem.employee.service;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,6 +10,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import com.anthem.employee.controller.repository.EmpRepository;
+import com.anthem.employee.exception.EmployeeDesignationNotFoundException;
+import com.anthem.employee.exception.EmployeeIdContainsSpecialCharacterException;
+import com.anthem.employee.exception.EmployeeIdNotFoundException;
+import com.anthem.employee.exception.EmployeeNameNotFoundException;
 import com.anthem.employee.model.Employee;
 import com.anthem.employee.utility.StringUtils;
 
@@ -21,37 +24,42 @@ public class EmployeeServiceImpl implements EmployeeService {
 	private EmpRepository repo;
 
 	@Override
-	public String saveEmp(Employee emp) {
+	public ResponseEntity<String> saveEmp(Employee emp) throws Exception {
 		try {
 			if (emp == null)
-				return "Please provide input";
+				return ResponseEntity.badRequest().body("Please provide input");
 			if (!StringUtils.validateString(emp.getId()))
-				return "Employee ID cannot be null";
+				throw new EmployeeIdNotFoundException("Employee ID cannot be null");
 			if (!StringUtils.validateString(emp.getName()))
-				return "Employee name cannot be null";
+				throw new EmployeeNameNotFoundException("Employee name cannot be null");
 			if (!StringUtils.validateString(emp.getDesignation()))
-				return "Employee designation cannot be null";
+				throw new EmployeeDesignationNotFoundException("Employee designation cannot be null");
 			if (!emp.getId().matches("^[a-zA-Z0-9]+$"))
-				return "Employee ID cannot contain special character";
+				throw new EmployeeIdContainsSpecialCharacterException("Employee ID cannot contain special character");
 
 			if (isEmployeeIdDuplicate(emp.getId())) {
-				return "Employee ID already exists";
+				return ResponseEntity.status(HttpStatus.CONFLICT).body("Employee ID already exists");
 			}
 			Employee savedEmp = repo.save(emp);
 			if (savedEmp != null && savedEmp.getId() != null)
-				return "Employee record Saved successfully";
+				return ResponseEntity.ok("Employee record Saved successfully");
 			else
-				return "Some error while saving Employee record";
+				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+						.body("Some error occured while saving Employee record");
+		} catch (EmployeeIdNotFoundException e) {
+			return ResponseEntity.badRequest().body(e.getMessage());
+		} catch (EmployeeNameNotFoundException e) {
+			return ResponseEntity.badRequest().body(e.getMessage());
+		} catch (EmployeeDesignationNotFoundException e) {
+			return ResponseEntity.badRequest().body(e.getMessage());
+		} catch (EmployeeIdContainsSpecialCharacterException e) {
+			return ResponseEntity.badRequest().body(e.getMessage());
 		} catch (Exception e) {
-			return "An error occurred";
+			throw new Exception("An error Occured", e);
 		}
 	}
 
 	public boolean isEmployeeIdDuplicate(String id) {
-		// List<Employee> duplicateEmployees =
-		// repo.findAll().stream().filter(e->e.getId().equals(id) ||
-		// e.getName().equals(name)).collect(Collectors.toList());
-		// return duplicateEmployees.size()>1;
 		try {
 			return repo.findById(id).isPresent();
 		} catch (Exception e) {
@@ -67,13 +75,15 @@ public class EmployeeServiceImpl implements EmployeeService {
 	public ResponseEntity<List<Employee>> findAllEmp(boolean ascending) throws Exception {
 		ResponseEntity<List<Employee>> responseEntity;
 		try {
-			List<Employee> employees=repo.findAll();
-		if (ascending) {
-			employees.sort(Comparator.comparing(Employee::getId));
-		} else {
-			employees.sort(Comparator.comparing(Employee::getId).reversed());
-		}
-		responseEntity=new ResponseEntity<>(employees,HttpStatus.OK);
+			List<Employee> employees = repo.findAll();
+			if (ascending) {
+				employees.sort(Comparator.comparing(Employee::getId));
+			} else {
+				employees.sort(Comparator.comparing(Employee::getId).reversed());
+			}
+			responseEntity = new ResponseEntity<>(employees, HttpStatus.OK);
+		} catch (ArrayIndexOutOfBoundsException e) { // use customized exception
+			return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
 		} catch (Exception e) {
 			throw new Exception();
 		}
@@ -94,7 +104,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
 				throw new Exception();
 			}
-		} catch (ArrayIndexOutOfBoundsException e) {
+		} catch (ArrayIndexOutOfBoundsException e) { // use customized exception
 			return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
 		} catch (Exception e) {
 			throw new Exception();
@@ -103,29 +113,71 @@ public class EmployeeServiceImpl implements EmployeeService {
 	}
 
 	@Override
-	public Employee updateEmployee(Employee emp) {
-		return repo.save(emp);
+	public ResponseEntity<Employee> updateEmployee(Employee emp) throws Exception {
+		try {
+			Employee updatedEmployee = repo.save(emp);
+			return new ResponseEntity<>(updatedEmployee, HttpStatus.OK);
+		} catch (IllegalArgumentException e) {
+			return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+		} catch (RuntimeException e) {
+			return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+		} catch (Exception e) {
+			throw new Exception();
+		}
 	}
 
 	@Override
-	public String deleteEmp(String empId) {
-		// TODO Auto-generated method stub
-		if (repo.findById(empId).isPresent()) {
-			repo.deleteById(empId);
-			return "Deleted Succesfully";
-		} else
-			return null;
+	public ResponseEntity<String> deleteEmp(String empId) throws Exception {
+
+		try {
+			Optional<Employee> optional = repo.findById(empId);
+			if (optional.isPresent()) {
+				repo.deleteById(empId);
+				return new ResponseEntity<>("Deleted Successfully", HttpStatus.OK);
+			} else {
+				return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+			}
+		} catch (RuntimeException e) {
+			return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+		} catch (Exception e) {
+			throw new Exception();
+		}
 	}
 
 	@Override
-	public List<Employee> findAllEmp() {
-		return repo.findAll();
+	public ResponseEntity<List<Employee>> findAllEmp() throws Exception {
+		try {
+			List<Employee> employees = repo.findAll();
+			return new ResponseEntity<>(employees, HttpStatus.OK);
+		} catch (RuntimeException e) {
+			return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+		} catch (Exception e) {
+			throw new Exception();
+		}
 	}
 
 	@Override
-	public List<Employee> getEmployeesWithSameName(String name) {
+	public ResponseEntity<List<Employee>> getEmployeesWithSameName(String name) throws Exception{
+        try {
+        	List<Employee> employees = repo.findByName(name);
+        	return new ResponseEntity<>(employees,HttpStatus.OK);
+        }catch(RuntimeException e) {
+        	return new ResponseEntity<>(null,HttpStatus.NOT_FOUND);
+        }catch(Exception e) {
+        	throw new Exception();
+        }
+	}
 
-		return repo.findByName(name);
+	@Override
+	public ResponseEntity<List<Employee>> getEmployeesByManagerId(String managerid) throws Exception {
+		try {
+			List<Employee> employees = repo.findByManagerId(managerid);
+			return new ResponseEntity<>(employees, HttpStatus.OK);
+		} catch (RuntimeException e) {
+			return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+		} catch (Exception e) {
+			throw new Exception();
+		}
 	}
 
 }

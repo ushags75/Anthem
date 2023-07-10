@@ -14,7 +14,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "employee")
-
 // Class
 public class Employee
 {
@@ -25,5 +24,6 @@ public class Employee
 	private String name;
 	private String designation;
 	private String location;
+	private String managerid;
 
 }

@@ -1,6 +1,5 @@
 // Java Program to Illustrate EmpRepo File
 package com.anthem.employee.controller.repository;
-
 import java.util.List;
 
 import org.springframework.boot.autoconfigure.data.web.SpringDataWebProperties.Sort;
@@ -16,4 +15,6 @@ public interface EmpRepository
 	List<Employee> findByLocationAndDesignation(String location,String designation);
 
 	List<Employee> findByName(String name);
+	@Query("{'managerid':?0}")
+	List<Employee> findByManagerId(String managerid);
 }
